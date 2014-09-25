@@ -197,3 +197,58 @@ function commerce_rules_physical_order_dimensions($order, $unit = 'cm') {
 
   return $order_dimensions;
 }
+
+/**
+ * Implements hook_commerce_physical_order_weight_alter().
+ *
+ * @param &$weight
+ *   The weight field value array representing the weight of the order or NULL
+ *   if no weight has yet been determined.
+ * @param $order
+ *   The order object whose weight is being determined.
+ * @param $unit
+ *   The unit of measurement to use for the returned weight of the order.
+ *
+ * @see commerce_physical_order_weight()
+ */
+function commerce_rules_physical_commerce_physical_order_weight_alter(&$weight, $order, $unit) {
+  if ($weight == NULL) {
+    // Function commerce_physical_order_weight returned null weight, we try our calculation method.
+    $total = 0;
+    
+    if (!empty($order->commerce_line_items[LANGUAGE_NONE])) {
+      foreach($order->commerce_line_items[LANGUAGE_NONE] as $line_item) {
+	    $item = commerce_line_item_load($line_item['line_item_id']);
+
+        if (!empty($item->commerce_product[LANGUAGE_NONE])) {
+          $pid = $item->commerce_product[LANGUAGE_NONE][0]['product_id'];
+          $nid = commerce_rules_physical_get_nid_by_pid($pid);
+          $node = node_load($nid);
+		      
+          if(!empty($node->field_weight[LANGUAGE_NONE][0])) {
+            $weight_comp = physical_weight_convert($node->field_weight[LANGUAGE_NONE][0], $unit);
+            $total = $total + ($weight_comp['weight'] * $item->quantity);
+          } 
+        }
+      }
+      
+      // Returning result.
+      $weight['weight'] = $total;
+      $weight['unit'] = $unit;
+    }
+  }
+}
+
+/**
+ * Given the product ID it returns de node ID.
+ *
+ * @param $pid
+ *   Product ID.
+ *
+ * @return
+ *   Node ID.
+ */
+function commerce_rules_physical_get_nid_by_pid($pid){
+	$result = db_query("SELECT entity_id as nid FROM {field_data_field_product}  WHERE field_product_product_id = :pid AND bundle = :type ORDER BY entity_id DESC LIMIT 1", array(":pid"=> $pid, ":type"=> 'book'))->fetchField();
+	return $result;
+}

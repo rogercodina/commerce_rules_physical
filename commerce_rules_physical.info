@@ -3,4 +3,6 @@ description = Adds physical condition rules for Commerce Kickstart.
 package = Administration
 core = 7.x
 
+dependencies[] = physical
 dependencies[] = commerce_physical
+dependencies[] = commerce_line_item
