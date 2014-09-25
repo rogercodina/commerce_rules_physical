@@ -1,0 +1,6 @@
+name = Commerce Rules Physical
+description = Adds physical condition rules for Commerce Kickstart.
+package = Administration
+core = 7.x
+
+dependencies[] = commerce_physical
